@@ -1,3 +1,46 @@
+function Find-SingleAppxPackage {
+    [CmdletBinding()]
+    param(
+        [Parameter(
+            Mandatory = $true,
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true
+        )]
+        $Package
+    )
+    
+    process {
+        if (-not ("Microsoft.Windows.Appx.PackageManager.Commands.AppxPackage" -as [type])) {
+            $tmp = (Get-AppxPackage)
+            $tmp = $null
+        }
+
+        $appxPackage = if ($Package -is [Microsoft.Windows.Appx.PackageManager.Commands.AppxPackage]) {
+            $Package
+        }
+        else {
+            $packages = @(Get-AppxPackage -Name $Package -ErrorAction SilentlyContinue)
+            if($packages.Count -eq 0){
+                Write-Error "No matching package."
+                return
+            }
+            elseif($packages.Count -ne 1){
+                $errorMessage = "Match the following packages:`n"
+                $errorMessage += $packages | ForEach-Object { "$_" } | Out-String
+                Write-Error $errorMessage.Trim()
+                return
+            }
+            $packages[0]
+        }
+        
+        if (-not $appxPackage) {
+            return
+        }
+
+        return $appxPackage
+    }
+}
+
 function Get-AppxPackageRelativeApplicationIds {
     [CmdletBinding()]
     param(
@@ -10,16 +53,7 @@ function Get-AppxPackageRelativeApplicationIds {
     )
     
     process {
-        $appxPackage = if ($Package -is [Microsoft.Windows.Appx.PackageManager.Commands.AppxPackage]) {
-            $Package
-        }
-        else {
-            Get-AppxPackage -Name $Package -ErrorAction SilentlyContinue
-        }
-        
-        if (-not $appxPackage) {
-            return
-        }
+        $appxPackage = (Find-SingleAppxPackage -Package $Package)
         
         $manifestPath = Join-Path -Path $appxPackage.InstallLocation -ChildPath "AppxManifest.xml"
         
@@ -55,16 +89,7 @@ function Get-AppxPackageApplicationUserModelIds {
     )
     
     process {
-        $appxPackage = if ($Package -is [Microsoft.Windows.Appx.PackageManager.Commands.AppxPackage]) {
-            $Package
-        }
-        else {
-            Get-AppxPackage -Name $Package -ErrorAction SilentlyContinue
-        }
-        
-        if (-not $appxPackage) {
-            return
-        }
+        $appxPackage = (Find-SingleAppxPackage -Package $Package)
         
         $packageFamilyName = $appxPackage.PackageFamilyName
         
@@ -288,16 +313,7 @@ function Invoke-AppxPackageApplication {
     )
 
     process {
-        $appxPackage = if ($Package -is [Microsoft.Windows.Appx.PackageManager.Commands.AppxPackage]) {
-            $Package
-        }
-        else {
-            Get-AppxPackage -Name $Package -ErrorAction SilentlyContinue
-        }
-        
-        if (-not $appxPackage) {
-            return
-        }
+        $appxPackage = (Find-SingleAppxPackage -Package $Package)
         
         if (-not $AppId) {
             $AppIds = @(Get-AppxPackageRelativeApplicationIds $appxPackage)
