@@ -10,6 +10,7 @@ jobs:
     name: Publish-PSModule
     runs-on: ubuntu-latest
     steps:
+      - run: git config --global core.autocrlf true
       - name: Checkout repo
         uses: actions/checkout@v4
 

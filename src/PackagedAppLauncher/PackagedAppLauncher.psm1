@@ -20,11 +20,11 @@ function Find-SingleAppxPackage {
         }
         else {
             $packages = @(Get-AppxPackage -Name $Package -ErrorAction SilentlyContinue)
-            if($packages.Count -eq 0){
+            if ($packages.Count -eq 0) {
                 Write-Error "No matching package."
                 return
             }
-            elseif($packages.Count -ne 1){
+            elseif ($packages.Count -ne 1) {
                 $errorMessage = "Match the following packages:`n"
                 $errorMessage += $packages | ForEach-Object { "$_" } | Out-String
                 Write-Error $errorMessage.Trim()
@@ -253,7 +253,7 @@ namespace BlueFire.AppxPackageLauncher
 
     $processId = 0
     $null = [BlueFire.AppxPackageLauncher.ApplicationActivationManagerFactory]::ActivateApplication($AppUserModelId, $Arguments, $options, [ref]$processId)
-    
+
     if ($processId -gt 0) {
         return (Get-Process -Id $processId)
     }
@@ -343,8 +343,11 @@ function Invoke-AppxPackageApplication {
                 $AssociationKeyword = (New-Object -TypeName System.Uri -ArgumentList @($Uri)).Scheme;
             }
         }
-
+        
         if ($AssociationType) {
+            if ($FilePath) {
+                $FilePath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($FilePath)
+            }
             if ($AssociationKeyword) {
                 $ProgId = (Get-AppAssociationProgId -AppUserModelId $AUMID -AssociationType $AssociationType -AssociationKeyword $AssociationKeyword)
                 if ($ProgId) {
@@ -360,6 +363,14 @@ function Invoke-AppxPackageApplication {
     }
 }
 
-Export-ModuleMember -Function Get-AppxPackageRelativeApplicationIds -Alias Get-MsixPackageRelativeApplicationIds
-Export-ModuleMember -Function Get-AppxPackageApplicationUserModelIds -Alias Get-MsixPackageApplicationUserModelIds
-Export-ModuleMember -Function Invoke-AppxPackageApplication -Alias Invoke-MsixPackageApplication
+Set-Alias -Name Get-MsixPackageRelativeApplicationIds -Value Get-AppxPackageRelativeApplicationIds
+Set-Alias -Name Get-AppxPackageRAIDs -Value Get-AppxPackageRelativeApplicationIds
+Set-Alias -Name Get-MsixPackageRAIDs -Value Get-AppxPackageRelativeApplicationIds
+
+Set-Alias -Name Get-MsixPackageApplicationUserModelIds -Value Get-AppxPackageApplicationUserModelIds
+Set-Alias -Name Get-AppxPackageAUMIDs -Value Get-AppxPackageApplicationUserModelIds
+Set-Alias -Name Get-MsixPackageAUMIDs -Value Get-AppxPackageApplicationUserModelIds
+
+Set-Alias -Name Invoke-MsixPackageApplication -Value Invoke-AppxPackageApplication
+Set-Alias -Name Invoke-AppxPackageApp -Value Invoke-AppxPackageApplication
+Set-Alias -Name Invoke-MsixPackageApp -Value Invoke-AppxPackageApplication
